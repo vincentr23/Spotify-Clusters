@@ -1,3 +1,7 @@
 Data/tracks.csv
 Data/artists.csv
 Data/dict_artists.json
+.env
+.DS_Store
+**/__pycache__/
+**/*.pyc

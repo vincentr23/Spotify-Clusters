@@ -18,12 +18,13 @@ cfg_dir = "../cfg"
 sys.path.append(third_party_dir)
 
 file_path = os.path.join(data_dir, "spotify_dataset.csv")
-CACHE_PATH = os.path.join(data_dir, "lyrics_cache.pkl")
+spotify_data_subset = os.path.join(data_dir, "spotify_dataset_500.csv")
+CACHE_PATH = os.path.join(data_dir, "lyrics_cache_500.pkl")
 
 from genius import Genius, save_lyrics, load_lyrics
 # Add Lyric data to dataset
-def _get_track_data(api_token=os.environ.get("GENIUS_ACCESS_TOKEN")):
-    df = pd.read_csv(file_path)
+def _get_track_metadata(api_token=os.environ.get("GENIUS_ACCESS_TOKEN")):
+    df = pd.read_csv(spotify_data_subset)
     client = Genius(api_token)
 
     embeddings = [None] * len(df)
@@ -33,6 +34,10 @@ def _get_track_data(api_token=os.environ.get("GENIUS_ACCESS_TOKEN")):
         print(f"Index: {index}, Track: {track}, Artist: {artist}")
         try:
             embeddings[index] = client.embed(track, artist)
+            cache = load_lyrics("lyrics.pkl")
+
+            lyrics = cache[(track, artist)]
+            vec = client.embed_text(lyrics)
         except Exception as e:
             print(f"  skipped: {e}")
 
@@ -40,7 +45,7 @@ def _get_track_data(api_token=os.environ.get("GENIUS_ACCESS_TOKEN")):
     return df
 
 def get_lyric_data(api_token=os.environ.get("GENIUS_ACCESS_TOKEN")):
-    dataset_df = pd.read_csv(file_path)
+    dataset_df = pd.read_csv(spotify_data_subset)
     client = Genius(api_token)
     
     cache = load_lyrics(CACHE_PATH) if os.path.exists(CACHE_PATH) else {}
