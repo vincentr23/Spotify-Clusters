@@ -176,3 +176,30 @@ class Genius:
         text = re.sub(r"\n{3,}", "\n\n", text).strip()
         return text
 
+def save_lyrics(data, path: str) -> None:
+    """
+    Serialize lyrics (or any picklable object) to a .pkl file.
+
+    `data` can be anything pickle handles — a dict like {(track, artist): lyrics},
+    a list of records, a pandas DataFrame with a 'lyrics' column, etc.
+
+    Example:
+        cache = {("Bohemian Rhapsody", "Queen"): "Is this the real life..."}
+        save_lyrics(cache, "lyrics.pkl")
+    """
+    import pickle
+    with open(path, "wb") as f:
+        pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def load_lyrics(path: str):
+    """
+    Load and return whatever was serialized by save_lyrics().
+
+    Example:
+        cache = load_lyrics("lyrics.pkl")
+        print(cache[("Bohemian Rhapsody", "Queen")])
+    """
+    import pickle
+    with open(path, "rb") as f:
+        return pickle.load(f)
