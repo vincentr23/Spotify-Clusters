@@ -5,7 +5,8 @@ Load dataset and configurations
 
 '''
 
-import os 
+import os
+import sys
 import pandas as pd
 import yaml
 
@@ -14,7 +15,22 @@ data_dir = "../Data"
 third_party_dir = "../ThirdParty"
 output_dir = "../Out"
 cfg_dir = "../cfg"
+sys.path.append(third_party_dir)
 file_path = os.path.join(data_dir, "spotify_dataset.csv")
+
+from genius import Genius
+# Add Lyric data to dataset
+def scrape_track_lyrics(api_token: str = None | os.environ.get("GENIUS_ACCESS_TOKEN")):
+    df = pd.read_csv(file_path)
+    
+    for index, row in df.iterrows():
+        track = row["track_name"]
+        artist = row["artists"]
+        try:
+            lyrics = Genius(api_token).lyrics(track, artist)
+        except Exception as e:
+            print(f"Error fetching lyrics for '{track}' by '{artist}': {e}")
+
 
 def get_attributes():
     # Read and parse a YAML file
