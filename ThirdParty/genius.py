@@ -35,10 +35,14 @@ class Track:
 
 
 class Genius:
-    def __init__(self, access_token: str, timeout: int = 10):
+    def __init__(self, access_token: str, timeout: int = 10,
+                 sbert_model: str = "all-MiniLM-L6-v2",
+    ):
         if not access_token:
             raise ValueError("A Genius API access token is required.")
         self.timeout = timeout
+        self._sbert_model_name = sbert_model
+        self._sbert = None
         self._session = requests.Session()
         self._session.headers.update({
             "Authorization": f"Bearer {access_token}",
@@ -77,6 +81,64 @@ class Genius:
             raise GeniusError(f"No track found for '{track}' by '{artist}'.")
         return self._scrape_lyrics(track.url)
 
+    def embed(self, track: str, artist: str, normalize: bool = True):
+        """
+        Convenience wrapper around lyrics() + embed_text().
+        
+        Return a single SBERT embedding that summarizes the song's
+        lyrics.
+        """
+        return self.embed_text(self.lyrics(track, artist), normalize=normalize)
+
+    def embed_text(self, text: str, normalize: bool = True):
+        """
+        Embed lyrics with SBERT. 
+        - Strips section markers
+        - encodes each remaining line, 
+        - mean-pools into a single song-level embedding
+
+        Note: SBERT models truncate at ~256–512 tokens.
+        """
+        model = self._get_sbert()
+        lines = self._clean_lyric_lines(text)
+        if not lines:
+            raise GeniusError("No lyrics available to embed.")
+        line_vecs = model.encode(
+            lines,
+            convert_to_numpy=True,
+            normalize_embeddings=False,
+            show_progress_bar=False,
+        )
+        song_vec = line_vecs.mean(axis=0)
+        if normalize:
+            norm = (song_vec ** 2).sum() ** 0.5
+            if norm > 0:
+                song_vec = song_vec / norm
+        return song_vec
+
+    # Private helpers
+
+    def _get_sbert(self):
+        if self._sbert is None:
+            # Lazy import: sentence-transformers pulls in torch, which is heavy.
+            from sentence_transformers import SentenceTransformer
+            self._sbert = SentenceTransformer(self._sbert_model_name)
+        return self._sbert
+
+    @staticmethod
+    def _clean_lyric_lines(text: str) -> list:
+        """Split lyrics into lines, dropping blanks and section markers."""
+        cleaned = []
+        for raw in text.split("\n"):
+            line = raw.strip()
+            if not line:
+                continue
+            # Skip "[Verse 1]", "[Chorus: Artist]", "[Bridge]", etc.
+            if line.startswith("[") and line.endswith("]"):
+                continue
+            cleaned.append(line)
+        return cleaned
+
     @staticmethod
     def _to_track(result: dict) -> Track:
         return Track(
@@ -87,6 +149,7 @@ class Genius:
         )
 
     def _scrape_lyrics(self, url: str) -> str:
+        # The lyrics page is public HTML
         resp = requests.get(
             url,
             headers={"User-Agent": "minimal-genius-client/1.0"},
@@ -109,6 +172,7 @@ class Genius:
                 br.replace_with("\n")
             parts.append(container.get_text())
 
-        text = "\n".join(parts).
+        text = "\n".join(parts)
         text = re.sub(r"\n{3,}", "\n\n", text).strip()
         return text
+
