@@ -20,17 +20,21 @@ file_path = os.path.join(data_dir, "spotify_dataset.csv")
 
 from genius import Genius
 # Add Lyric data to dataset
-def scrape_track_lyrics(api_token: str = None | os.environ.get("GENIUS_ACCESS_TOKEN")):
+def get_track_data(api_token: str = None | os.environ.get("GENIUS_ACCESS_TOKEN")):
     df = pd.read_csv(file_path)
-    
+    client = Genius(api_token)
+
     for index, row in df.iterrows():
         track = row["track_name"]
         artist = row["artists"]
         try:
-            lyrics = Genius(api_token).lyrics(track, artist)
+            lyrics = client.lyrics(track, artist)
+            vector = client.embed(track, artist)
+            df['lyric_embedding'] = vector
         except Exception as e:
+            df['lyric_embedding'] = None
             print(f"Error fetching lyrics for '{track}' by '{artist}': {e}")
-
+    return df
 
 def get_attributes():
     # Read and parse a YAML file
@@ -42,7 +46,8 @@ def get_attributes():
     return features, music_elements
 
 def get_feature_data():
-    df = pd.read_csv(file_path)
+    #df = pd.read_csv(file_path)
+    df = get_track_data()
     print("First 5 records:", df.head())
     
     features, music_elements = get_attributes()
