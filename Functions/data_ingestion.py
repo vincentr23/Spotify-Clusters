@@ -20,20 +20,25 @@ file_path = os.path.join(data_dir, "spotify_dataset.csv")
 
 from genius import Genius
 # Add Lyric data to dataset
-def get_track_data(api_token: str = None | os.environ.get("GENIUS_ACCESS_TOKEN")):
+def get_track_data(api_token=os.environ.get("GENIUS_ACCESS_TOKEN")):
     df = pd.read_csv(file_path)
     client = Genius(api_token)
 
+    df['lyric_embedding'] = pd.Series([None] * len(df), dtype=object)
+
     for index, row in df.iterrows():
+        print(f"Index: {index}, Track: {row['track_name']}, Artist: {row['artists']}")
+
         track = row["track_name"]
         artist = row["artists"]
         try:
             lyrics = client.lyrics(track, artist)
-            vector = client.embed(track, artist)
-            df['lyric_embedding'] = vector
+            vec = client.embed(track, artist)
         except Exception as e:
-            df['lyric_embedding'] = None
+            vec = None
             print(f"Error fetching lyrics for '{track}' by '{artist}': {e}")
+        df.at[index, 'lyric_embedding'] = vec
+
     return df
 
 def get_attributes():
@@ -46,8 +51,7 @@ def get_attributes():
     return features, music_elements
 
 def get_feature_data():
-    #df = pd.read_csv(file_path)
-    df = get_track_data()
+    df = pd.read_csv(file_path)
     print("First 5 records:", df.head())
     
     features, music_elements = get_attributes()
