@@ -40,6 +40,12 @@ def _get_track_metadata(api_token=os.environ.get("GENIUS_ACCESS_TOKEN")):
     df['lyric_embedding'] = embeddings
     return df
 
+def get_track_data():
+    all_data = pd.read_csv(file_path)
+    
+    tracks = all_data[["track_name", "artists"]]
+    return tracks
+
 def get_lyric_data(api_token=os.environ.get("GENIUS_ACCESS_TOKEN")):
     dataset_df = pd.read_csv(spotify_data_subset)
     client = Genius(api_token)
