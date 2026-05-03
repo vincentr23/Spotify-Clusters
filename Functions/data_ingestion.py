@@ -19,7 +19,7 @@ sys.path.append(third_party_dir)
 
 file_path = os.path.join(data_dir, "spotify_dataset.csv")
 spotify_data_subset = os.path.join(data_dir, "spotify_dataset_500.csv")
-CACHE_PATH = os.path.join(data_dir, "lyrics_cache_500.pkl")
+CACHE_PATH = os.path.join(data_dir, "lyrics_cache.pkl")
 
 from genius import Genius, save_lyrics, load_lyrics
 # Add Lyric data to dataset
@@ -34,10 +34,6 @@ def _get_track_metadata(api_token=os.environ.get("GENIUS_ACCESS_TOKEN")):
         print(f"Index: {index}, Track: {track}, Artist: {artist}")
         try:
             embeddings[index] = client.embed(track, artist)
-            cache = load_lyrics("lyrics.pkl")
-
-            lyrics = cache[(track, artist)]
-            vec = client.embed_text(lyrics)
         except Exception as e:
             print(f"  skipped: {e}")
 
@@ -51,7 +47,8 @@ def get_lyric_data(api_token=os.environ.get("GENIUS_ACCESS_TOKEN")):
     cache = load_lyrics(CACHE_PATH) if os.path.exists(CACHE_PATH) else {}
 
     for index, row in dataset_df.iterrows():
-        key = (row["track_name"], row["artists"])
+        print(f"Index: {index}, Track: {row['track_name']}, Artist: {row['artists']}")
+        key = (row['track_name'], row['artists'])
         if key in cache:
             continue  # already done
         try:

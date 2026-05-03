@@ -15,9 +15,7 @@ def feature_scaling(X):
 def feature_correlation(X):
   X_scaled = feature_scaling(X)
   # Find correlation between audio features
-  corr = pd.DataFrame(X_scaled, columns=X.columns).corr()
-  # ---
-  return corr
+  return pd.DataFrame(X_scaled, columns=X.columns).corr()
 
 def plot_correlation_matrix(corr):
   fig, ax = plt.subplots(figsize=(10, 8))

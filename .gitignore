@@ -5,3 +5,4 @@ Data/dict_artists.json
 .DS_Store
 **/__pycache__/
 **/*.pyc
+*.pkl
