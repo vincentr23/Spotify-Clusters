@@ -10,7 +10,8 @@ def reduce(X, y, combo, id_data):
         n_components=2,
         n_neighbors=n_neighbors,
         min_dist=min_dist,
-        metric="euclidean"
+        metric="euclidean",
+        random_state=42
     )
 
     embedding = reducer.fit_transform(X)
