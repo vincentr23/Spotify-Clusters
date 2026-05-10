@@ -1,3 +1,6 @@
+from sklearn.manifold import trustworthiness
+import numpy as np
+
 import cudf, cuml
 from cuml.manifold import TSNE, UMAP
 import plotly.express as px
@@ -45,3 +48,14 @@ def reduce(X, y, combo, id_data):
     )
 
     return embedding,fig
+
+# evaluates trustworthiness and returns value
+# to make more efficient, takes random sample of n_samples
+def eval_trustworthiness(X, X_embedded, n_neighbors, n_samples=25000, random_state=42):
+    rng = np.random.default_rng(random_state)
+    idx = rng.choice(len(X), size=min(n_samples, len(X)), replace=False)
+
+    X_sub = X[idx]
+    X_emb_sub = X_embedded[idx]
+
+    return trustworthiness(X_sub, X_emb_sub, n_neighbors=n_neighbors)
